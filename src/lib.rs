@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString, c_int};
+use std::ffi::{CStr, CString};
 use std::num::NonZeroU32;
 use std::path::Path;
 use std::ptr;
@@ -91,7 +91,7 @@ impl EspeakSynth {
         Ok(voices)
     }
 
-    fn set_voice(&self, voice: &str) -> Result<(), Error> {
+    pub fn set_voice(&self, voice: &str) -> Result<(), Error> {
         let s = CString::new(voice)?;
 
         let result = unsafe { espeak_SetVoiceByName(s.as_ptr()) };
@@ -102,7 +102,7 @@ impl EspeakSynth {
         Ok(())
     }
 
-    fn set_parameter(&self, param: EspeakParam, value: u32) -> Result<(), Error> {
+    pub fn set_parameter(&self, param: EspeakParam, value: u32) -> Result<(), Error> {
         validate_param_value(param, value)?;
 
         let result = unsafe { espeak_SetParameter(param as _, value as _, 0) };
