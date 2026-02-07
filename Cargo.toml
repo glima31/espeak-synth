@@ -1,0 +1,17 @@
+[workspace]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Guilherme Lima <oss@glima31.dev>"]
+license = "GPL-3.0-or-later"
+
+[package]
+name = "espeak-synth"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
