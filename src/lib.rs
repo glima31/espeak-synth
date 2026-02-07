@@ -44,6 +44,10 @@ impl EspeakSynth {
             sample_rate: NonZeroU32::new(sample_rate as u32).unwrap(),
         }
     }
+
+    pub fn sample_rate(&self) -> NonZeroU32 {
+        self.sample_rate
+    }
 }
 
 #[cfg(test)]
