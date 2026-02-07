@@ -5,3 +5,10 @@ version = 4
 [[package]]
 name = "espeak-synth"
 version = "0.1.0"
+dependencies = [
+ "espeak-sys",
+]
+
+[[package]]
+name = "espeak-sys"
+version = "0.1.0"
