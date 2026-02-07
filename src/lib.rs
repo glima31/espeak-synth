@@ -5,6 +5,7 @@ use std::ptr;
 
 use espeak_sys::*;
 
+mod callback;
 mod error;
 mod parameter;
 
@@ -38,7 +39,6 @@ impl EspeakSynth {
         }
 
         let data_dir = CString::new(data_dir.to_str().unwrap()).unwrap();
-
         let sample_rate = unsafe {
             espeak_Initialize(
                 espeak_AUDIO_OUTPUT_AUDIO_OUTPUT_SYNCHRONOUS,
@@ -52,6 +52,10 @@ impl EspeakSynth {
             sample_rate > 0,
             "Espeak initialization failed with EE_INTERNAL_ERROR"
         );
+
+        unsafe {
+            espeak_SetSynthCallback(Some(callback::synth_callback));
+        };
 
         Self {
             sample_rate: NonZeroU32::new(sample_rate as u32).unwrap(),
