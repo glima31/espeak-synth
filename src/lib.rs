@@ -59,12 +59,10 @@ impl EspeakSynth {
         self.sample_rate
     }
 
-    pub fn available_voices(&self) -> Result<Vec<String>, EspeakError> {
+    pub fn available_voices(&self) -> Result<Vec<String>, Error> {
         let voices_ptr = unsafe { espeak_ListVoices(ptr::null_mut()) };
         if voices_ptr.is_null() {
-            return Err(EspeakError::ListVoices(
-                "espeak_ListVoices returned a null pointer".to_owned(),
-            ));
+            return Err(Error::NoVoicesAvailable);
         }
 
         let mut voices: Vec<String> = Vec::new();
@@ -79,11 +77,7 @@ impl EspeakSynth {
             unsafe {
                 let voice = &*voice;
                 if !voice.name.is_null() {
-                    let name = CStr::from_ptr(voice.name)
-                        .to_str()
-                        .map_err(|e| EspeakError::ListVoices(e.to_string()))?
-                        .to_string();
-
+                    let name = CStr::from_ptr(voice.name).to_str()?.to_string();
                     voices.push(name);
                 }
             }
@@ -92,6 +86,17 @@ impl EspeakSynth {
         }
 
         Ok(voices)
+    }
+
+    fn set_voice(&self, voice: &str) -> Result<(), Error> {
+        let s = CString::new(voice)?;
+
+        let result = unsafe { espeak_SetVoiceByName(s.as_ptr()) };
+        if result != espeak_ERROR_EE_OK {
+            return Err(Error::Espeak(result));
+        }
+
+        Ok(())
     }
 }
 
@@ -118,5 +123,19 @@ mod tests {
         let voices = espeak.available_voices().unwrap();
         assert!(voices.contains(&"German".to_owned()));
         assert!(voices.contains(&"English (Great Britain)".to_owned()));
+    }
+
+    #[test]
+    fn set_voice_valid_returns_ok() {
+        let espeak = EspeakSynth::default();
+        let result = espeak.set_voice("German");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn set_voice_invalid_returns_ee_not_found_err() {
+        let espeak = EspeakSynth::default();
+        let err = espeak.set_voice("Invalid").unwrap_err();
+        assert!(matches!(err, Error::Espeak(code) if code == espeak_ERROR_EE_NOT_FOUND));
     }
 }

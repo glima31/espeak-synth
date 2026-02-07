@@ -49,7 +49,7 @@ mod tests {
         );
         assert_eq!(
             Error::Espeak(10).to_string(),
-            "espeak operation failed: unknowne"
+            "espeak operation failed: unknown error"
         );
     }
 }
