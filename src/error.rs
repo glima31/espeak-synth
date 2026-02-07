@@ -1,8 +1,8 @@
 use std::{ffi::NulError, str::Utf8Error};
 
 use espeak_sys::{
-    espeak_ERROR, espeak_ERROR_EE_BUFFER_FULL, espeak_ERROR_EE_INTERNAL_ERROR,
-    espeak_ERROR_EE_NOT_FOUND,
+    espeak_ERROR, espeak_ERROR_EE_BUFFER_FULL as BUFFER_FULL,
+    espeak_ERROR_EE_INTERNAL_ERROR as INTERNAL_ERROR, espeak_ERROR_EE_NOT_FOUND as NOT_FOUND,
 };
 
 use super::EspeakParam;
@@ -27,9 +27,9 @@ pub enum Error {
 
 fn espeak_error_msg(code: espeak_ERROR) -> &'static str {
     match code {
-        espeak_ERROR_EE_INTERNAL_ERROR => "internal error",
-        espeak_ERROR_EE_BUFFER_FULL => "buffer full",
-        espeak_ERROR_EE_NOT_FOUND => "not found",
+        INTERNAL_ERROR => "internal error",
+        BUFFER_FULL => "buffer full",
+        NOT_FOUND => "not found",
         _ => "unknown error",
     }
 }
@@ -41,15 +41,15 @@ mod tests {
     #[test]
     fn espeak_variant_to_string_returns_expected() {
         assert_eq!(
-            Error::Espeak(espeak_ERROR_EE_INTERNAL_ERROR).to_string(),
+            Error::Espeak(INTERNAL_ERROR).to_string(),
             "espeak operation failed: internal error"
         );
         assert_eq!(
-            Error::Espeak(espeak_ERROR_EE_BUFFER_FULL).to_string(),
+            Error::Espeak(BUFFER_FULL).to_string(),
             "espeak operation failed: buffer full"
         );
         assert_eq!(
-            Error::Espeak(espeak_ERROR_EE_NOT_FOUND).to_string(),
+            Error::Espeak(NOT_FOUND).to_string(),
             "espeak operation failed: not found"
         );
         assert_eq!(
