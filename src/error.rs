@@ -5,6 +5,8 @@ use espeak_sys::{
     espeak_ERROR_EE_NOT_FOUND,
 };
 
+use super::EspeakParam;
+
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
     #[error("espeak operation failed: {}", espeak_error_msg(*.0))]
@@ -12,6 +14,9 @@ pub enum Error {
 
     #[error("no voices available")]
     NoVoicesAvailable,
+
+    #[error("invalid value for '{0:?}': {1}")]
+    InvalidParamValue(EspeakParam, u32),
 
     #[error(transparent)]
     NullPointer(#[from] NulError),
@@ -50,6 +55,30 @@ mod tests {
         assert_eq!(
             Error::Espeak(10).to_string(),
             "espeak operation failed: unknown error"
+        );
+    }
+
+    #[test]
+    fn invalid_param_value_variant_to_string_returns_expected() {
+        assert_eq!(
+            Error::InvalidParamValue(EspeakParam::Amplitude, 666).to_string(),
+            "invalid value for 'Amplitude': 666"
+        );
+        assert_eq!(
+            Error::InvalidParamValue(EspeakParam::Pitch, 666).to_string(),
+            "invalid value for 'Pitch': 666"
+        );
+        assert_eq!(
+            Error::InvalidParamValue(EspeakParam::PitchRange, 666).to_string(),
+            "invalid value for 'PitchRange': 666"
+        );
+        assert_eq!(
+            Error::InvalidParamValue(EspeakParam::Speed, 666).to_string(),
+            "invalid value for 'Speed': 666"
+        );
+        assert_eq!(
+            Error::InvalidParamValue(EspeakParam::WordGap, 666).to_string(),
+            "invalid value for 'WordGap': 666"
         );
     }
 }

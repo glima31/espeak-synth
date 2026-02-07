@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::{CStr, CString, c_int};
 use std::num::NonZeroU32;
 use std::path::Path;
 use std::ptr;
@@ -6,7 +6,10 @@ use std::ptr;
 use espeak_sys::*;
 
 mod error;
+mod parameter;
+
 pub use error::*;
+pub use parameter::*;
 
 pub struct EspeakSynth {
     sample_rate: NonZeroU32,
@@ -98,6 +101,17 @@ impl EspeakSynth {
 
         Ok(())
     }
+
+    fn set_parameter(&self, param: EspeakParam, value: u32) -> Result<(), Error> {
+        validate_param_value(param, value)?;
+
+        let result = unsafe { espeak_SetParameter(param as _, value as _, 0) };
+        if result != espeak_ERROR_EE_OK {
+            return Err(Error::Espeak(result));
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -137,5 +151,23 @@ mod tests {
         let espeak = EspeakSynth::default();
         let err = espeak.set_voice("Invalid").unwrap_err();
         assert!(matches!(err, Error::Espeak(code) if code == espeak_ERROR_EE_NOT_FOUND));
+    }
+
+    #[test]
+    fn set_parameter_valid_case_returns_ok() {
+        let espeak = EspeakSynth::default();
+        let result = espeak.set_parameter(EspeakParam::Amplitude, 100);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn set_parameter_invalid_returns_err() {
+        let espeak = EspeakSynth::default();
+        let err = espeak
+            .set_parameter(EspeakParam::Amplitude, 101)
+            .unwrap_err();
+        assert!(
+            matches!(err, Error::InvalidParamValue(p, v) if p == EspeakParam::Amplitude && v == 101)
+        );
     }
 }
