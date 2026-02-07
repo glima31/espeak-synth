@@ -1,8 +1,12 @@
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::num::NonZeroU32;
 use std::path::Path;
+use std::ptr;
 
 use espeak_sys::*;
+
+mod error;
+pub use error::*;
 
 pub struct EspeakSynth {
     sample_rate: NonZeroU32,
@@ -54,6 +58,41 @@ impl EspeakSynth {
     pub fn sample_rate(&self) -> NonZeroU32 {
         self.sample_rate
     }
+
+    pub fn available_voices(&self) -> Result<Vec<String>, EspeakError> {
+        let voices_ptr = unsafe { espeak_ListVoices(ptr::null_mut()) };
+        if voices_ptr.is_null() {
+            return Err(EspeakError::ListVoices(
+                "espeak_ListVoices returned a null pointer".to_owned(),
+            ));
+        }
+
+        let mut voices: Vec<String> = Vec::new();
+        let mut i = 0;
+
+        loop {
+            let voice = unsafe { *voices_ptr.add(i) };
+            if voice.is_null() {
+                break;
+            }
+
+            unsafe {
+                let voice = &*voice;
+                if !voice.name.is_null() {
+                    let name = CStr::from_ptr(voice.name)
+                        .to_str()
+                        .map_err(|e| EspeakError::ListVoices(e.to_string()))?
+                        .to_string();
+
+                    voices.push(name);
+                }
+            }
+
+            i += 1;
+        }
+
+        Ok(voices)
+    }
 }
 
 #[cfg(test)]
@@ -68,8 +107,16 @@ mod tests {
 
     #[test]
     #[should_panic = "espeak-ng-data directory does not exist: ./invalid"]
-    fn new_invalid_data_dir_panics() {
-        let invalid_dir = Path::new("./invalid");
-        let _ = EspeakSynth::new(invalid_dir);
+    fn new_with_non_existent_data_dir_panics() {
+        let non_existent = Path::new("./invalid");
+        let _ = EspeakSynth::new(non_existent);
+    }
+
+    #[test]
+    fn available_voices_valid_data_dir_result_contains_expected_voices() {
+        let espeak = EspeakSynth::default();
+        let voices = espeak.available_voices().unwrap();
+        assert!(voices.contains(&"German".to_owned()));
+        assert!(voices.contains(&"English (Great Britain)".to_owned()));
     }
 }
