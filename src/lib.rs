@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::{CStr, CString, c_void};
 use std::num::NonZeroU32;
 use std::path::Path;
 use std::ptr;
@@ -66,6 +66,28 @@ impl EspeakSynth {
         self.sample_rate
     }
 
+    pub fn synthesize(&self, text: &str, audio_buffer: &mut Vec<i16>) -> Result<(), Error> {
+        let text = CString::new(text)?;
+        let result = unsafe {
+            espeak_Synth(
+                text.as_ptr().cast(),
+                text.as_bytes_with_nul().len(),
+                0,
+                espeak_POSITION_TYPE_POS_WORD,
+                0,
+                0,
+                ptr::null_mut(),
+                audio_buffer as *mut Vec<i16> as *mut c_void,
+            )
+        };
+
+        if result != espeak_ERROR_EE_OK {
+            return Err(Error::Espeak(result));
+        }
+
+        Ok(())
+    }
+
     pub fn available_voices(&self) -> Result<Vec<String>, Error> {
         let voices_ptr = unsafe { espeak_ListVoices(ptr::null_mut()) };
         if voices_ptr.is_null() {
@@ -121,6 +143,13 @@ impl EspeakSynth {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hound::WavReader;
+
+    const REFERENCE_OUTPUT_WAV: &str = "testdata/dies_ist_ein_test.wav";
+    const REFERENCE_TEXT: &str = "Dies ist ein Test";
+    const REFERENCE_VOICE: &str = "German";
+    const REFERENCE_PITCH: u32 = 40;
+    const REFERNECE_SPEED: u32 = 80;
 
     #[test]
     fn default_initializes_espeak() {
@@ -173,5 +202,37 @@ mod tests {
         assert!(
             matches!(err, Error::InvalidParamValue(p, v) if p == EspeakParam::Amplitude && v == 101)
         );
+    }
+
+    #[test]
+    fn synthesize_with_default_settings_works() {
+        let espeak = EspeakSynth::default();
+        let mut buffer = Vec::new();
+
+        espeak.synthesize("test", &mut buffer).unwrap();
+        assert!(!buffer.is_empty());
+    }
+
+    #[test]
+    fn synthesize_known_settings_result_matches_reference() {
+        let espeak = EspeakSynth::default();
+        let mut buffer = Vec::new();
+
+        espeak.set_voice(REFERENCE_VOICE).unwrap();
+        espeak
+            .set_parameter(EspeakParam::Pitch, REFERENCE_PITCH)
+            .unwrap();
+        espeak
+            .set_parameter(EspeakParam::Speed, REFERNECE_SPEED)
+            .unwrap();
+
+        espeak.synthesize(REFERENCE_TEXT, &mut buffer).unwrap();
+        assert!(!buffer.is_empty());
+
+        let reference_wav = WavReader::open(REFERENCE_OUTPUT_WAV).unwrap();
+        let reference_samples: Vec<i16> =
+            reference_wav.into_samples().map(|s| s.unwrap()).collect();
+
+        assert_eq!(buffer, reference_samples);
     }
 }
