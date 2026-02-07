@@ -15,6 +15,12 @@ impl Default for EspeakSynth {
     }
 }
 
+impl Drop for EspeakSynth {
+    fn drop(&mut self) {
+        unsafe { espeak_Terminate() };
+    }
+}
+
 impl EspeakSynth {
     pub fn new(data_dir: &Path) -> Self {
         if !data_dir.exists() {
