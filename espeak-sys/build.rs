@@ -7,6 +7,10 @@ fn main() {
     let espeak_src = manifest_dir.join("espeak-ng");
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
+    // espeak-ng-data/ will contain the Espeak voices
+    let data_dir = out_dir.join("share/espeak-ng-data");
+    println!("cargo:data-dir={}", data_dir.display());
+
     // for faster builds
     unsafe {
         env::set_var(
@@ -29,10 +33,6 @@ fn main() {
         .define("USE_LIBSONIC", "OFF")
         .define("USE_LIBPCAUDIO", "OFF")
         .define("USE_SPEECHPLAYER", "OFF")
-        .define("COMPILE_INTONATIONS", "OFF")
-        .define("COMPILE_PHONEMES", "OFF")
-        .define("COMPILE_DICTIONARIES", "OFF")
-        .always_configure(false)
         .very_verbose(env::var("CMAKE_VERBOSE").is_ok())
         .build();
 
