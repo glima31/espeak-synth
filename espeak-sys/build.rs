@@ -21,6 +21,7 @@ fn main() {
     // disable what we don't need
     let mut cmake_conf = Config::new(&espeak_src);
     let dst = cmake_conf
+        .profile("Release")
         .define("BUILD_SHARED_LIBS", "OFF")
         .define("ENABLE_TESTS", "OFF")
         .define("USE_ASYNC", "OFF")
