@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use std::{ffi::NulError, str::Utf8Error};
 
 use espeak_sys::{
