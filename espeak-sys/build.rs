@@ -65,8 +65,9 @@ fn main() {
         println!("cargo:rustc-link-lib=c++");
     }
 
-    if cfg!(all(debug_assertions, windows)) {
-        println!("cargo:rustc-link-lib=dylib=msvcrtd");
+    if cfg!(target_os = "windows") {
+        // needed to find the data path
+        println!("cargo:rustc-link-lib=advapi32");
     }
 
     // Generate bindings
