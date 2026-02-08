@@ -88,6 +88,14 @@ impl EspeakSynth {
         Ok(())
     }
 
+    pub fn get_parameter_current(&self, param: EspeakParam) -> u32 {
+        unsafe { espeak_GetParameter(param as _, 1) as u32 }
+    }
+
+    pub fn get_parameter_default(&self, param: EspeakParam) -> u32 {
+        unsafe { espeak_GetParameter(param as _, 0) as u32 }
+    }
+
     pub fn available_voices(&self) -> Result<Vec<String>, Error> {
         let voices_ptr = unsafe { espeak_ListVoices(ptr::null_mut()) };
         if voices_ptr.is_null() {
@@ -202,6 +210,59 @@ mod tests {
         assert!(
             matches!(err, Error::InvalidParamValue(p, v) if p == EspeakParam::Amplitude && v == 101)
         );
+    }
+
+    #[test]
+    fn get_parameter_default_returns_expected_defaults() {
+        let espeak = EspeakSynth::default();
+        let expected_defaults = vec![
+            (EspeakParam::Amplitude, 100),
+            (EspeakParam::Pitch, 50),
+            (EspeakParam::PitchRange, 50),
+            (EspeakParam::Speed, 175),
+            (EspeakParam::WordGap, 0),
+        ];
+
+        for (param, expected) in expected_defaults {
+            let result = espeak.get_parameter_default(param);
+            assert_eq!(result, expected);
+        }
+    }
+
+    #[test]
+    fn get_parameter_default_returns_same_values_after_parameter_change() {
+        let espeak = EspeakSynth::default();
+        let test_cases = vec![
+            (EspeakParam::Amplitude, 50, 100),
+            (EspeakParam::Pitch, 100, 50),
+            (EspeakParam::PitchRange, 90, 50),
+            (EspeakParam::Speed, 200, 175),
+            (EspeakParam::WordGap, 50, 0),
+        ];
+
+        for (param, new_value, expected) in test_cases {
+            espeak.set_parameter(param, new_value).unwrap();
+            let result = espeak.get_parameter_default(param);
+            assert_eq!(result, expected);
+        }
+    }
+
+    #[test]
+    fn get_parameter_current_returns_new_values_after_parameter_change() {
+        let espeak = EspeakSynth::default();
+        let test_cases = vec![
+            (EspeakParam::Amplitude, 50),
+            (EspeakParam::Pitch, 100),
+            (EspeakParam::PitchRange, 90),
+            (EspeakParam::Speed, 200),
+            (EspeakParam::WordGap, 50),
+        ];
+
+        for (param, new_value) in test_cases {
+            espeak.set_parameter(param, new_value).unwrap();
+            let result = espeak.get_parameter_current(param);
+            assert_eq!(result, new_value);
+        }
     }
 
     #[test]
