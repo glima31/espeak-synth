@@ -88,11 +88,11 @@ impl EspeakSynth {
         Ok(())
     }
 
-    pub fn get_parameter_current(&self, param: EspeakParam) -> u32 {
+    pub fn parameter_current(&self, param: EspeakParam) -> u32 {
         unsafe { espeak_GetParameter(param as _, 1) as u32 }
     }
 
-    pub fn get_parameter_default(&self, param: EspeakParam) -> u32 {
+    pub fn parameter_default(&self, param: EspeakParam) -> u32 {
         unsafe { espeak_GetParameter(param as _, 0) as u32 }
     }
 
@@ -213,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    fn get_parameter_default_returns_expected_defaults() {
+    fn parameter_default_returns_expected_defaults() {
         let espeak = EspeakSynth::default();
         let expected_defaults = vec![
             (EspeakParam::Amplitude, 100),
@@ -224,13 +224,13 @@ mod tests {
         ];
 
         for (param, expected) in expected_defaults {
-            let result = espeak.get_parameter_default(param);
+            let result = espeak.parameter_default(param);
             assert_eq!(result, expected);
         }
     }
 
     #[test]
-    fn get_parameter_default_returns_same_values_after_parameter_change() {
+    fn parameter_default_returns_same_values_after_parameter_change() {
         let espeak = EspeakSynth::default();
         let test_cases = vec![
             (EspeakParam::Amplitude, 50, 100),
@@ -242,13 +242,13 @@ mod tests {
 
         for (param, new_value, expected) in test_cases {
             espeak.set_parameter(param, new_value).unwrap();
-            let result = espeak.get_parameter_default(param);
+            let result = espeak.parameter_default(param);
             assert_eq!(result, expected);
         }
     }
 
     #[test]
-    fn get_parameter_current_returns_new_values_after_parameter_change() {
+    fn parameter_current_returns_new_values_after_parameter_change() {
         let espeak = EspeakSynth::default();
         let test_cases = vec![
             (EspeakParam::Amplitude, 50),
@@ -260,7 +260,7 @@ mod tests {
 
         for (param, new_value) in test_cases {
             espeak.set_parameter(param, new_value).unwrap();
-            let result = espeak.get_parameter_current(param);
+            let result = espeak.parameter_current(param);
             assert_eq!(result, new_value);
         }
     }
