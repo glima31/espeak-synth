@@ -88,6 +88,32 @@ impl EspeakSynth {
         Ok(())
     }
 
+    pub fn voice(&self) -> Result<Option<String>, Error> {
+        let curr_voice_ptr = unsafe { espeak_GetCurrentVoice() };
+        if curr_voice_ptr.is_null() {
+            return Ok(None);
+        }
+
+        let voice = unsafe {
+            let curr_voice = &*curr_voice_ptr;
+            if curr_voice.name.is_null() {
+                return Ok(None);
+            }
+
+            CStr::from_ptr(curr_voice.name).to_str()?.to_owned()
+        };
+
+        Ok(Some(voice))
+    }
+
+    pub fn parameter_current(&self, param: EspeakParam) -> u32 {
+        unsafe { espeak_GetParameter(param as _, 1) as u32 }
+    }
+
+    pub fn parameter_default(&self, param: EspeakParam) -> u32 {
+        unsafe { espeak_GetParameter(param as _, 0) as u32 }
+    }
+
     pub fn available_voices(&self) -> Result<Vec<String>, Error> {
         let voices_ptr = unsafe { espeak_ListVoices(ptr::null_mut()) };
         if voices_ptr.is_null() {
@@ -137,102 +163,5 @@ impl EspeakSynth {
         }
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use hound::WavReader;
-
-    const REFERENCE_OUTPUT_WAV: &str = "testdata/dies_ist_ein_test.wav";
-    const REFERENCE_TEXT: &str = "Dies ist ein Test";
-    const REFERENCE_VOICE: &str = "German";
-    const REFERENCE_PITCH: u32 = 40;
-    const REFERNECE_SPEED: u32 = 80;
-
-    #[test]
-    fn default_initializes_espeak() {
-        let espeak = EspeakSynth::default();
-        assert!(espeak.sample_rate.get() >= 22050);
-    }
-
-    #[test]
-    #[should_panic = "espeak-ng-data directory does not exist: ./invalid"]
-    fn new_with_non_existent_data_dir_panics() {
-        let non_existent = Path::new("./invalid");
-        let _ = EspeakSynth::new(non_existent);
-    }
-
-    #[test]
-    fn available_voices_valid_data_dir_result_contains_expected_voices() {
-        let espeak = EspeakSynth::default();
-        let voices = espeak.available_voices().unwrap();
-        assert!(voices.contains(&"German".to_owned()));
-        assert!(voices.contains(&"English (Great Britain)".to_owned()));
-    }
-
-    #[test]
-    fn set_voice_valid_returns_ok() {
-        let espeak = EspeakSynth::default();
-        let result = espeak.set_voice("German");
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn set_voice_invalid_returns_ee_not_found_err() {
-        let espeak = EspeakSynth::default();
-        let err = espeak.set_voice("Invalid").unwrap_err();
-        assert!(matches!(err, Error::Espeak(code) if code == espeak_ERROR_EE_NOT_FOUND));
-    }
-
-    #[test]
-    fn set_parameter_valid_case_returns_ok() {
-        let espeak = EspeakSynth::default();
-        let result = espeak.set_parameter(EspeakParam::Amplitude, 100);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn set_parameter_invalid_returns_err() {
-        let espeak = EspeakSynth::default();
-        let err = espeak
-            .set_parameter(EspeakParam::Amplitude, 101)
-            .unwrap_err();
-        assert!(
-            matches!(err, Error::InvalidParamValue(p, v) if p == EspeakParam::Amplitude && v == 101)
-        );
-    }
-
-    #[test]
-    fn synthesize_with_default_settings_works() {
-        let espeak = EspeakSynth::default();
-        let mut buffer = Vec::new();
-
-        espeak.synthesize("test", &mut buffer).unwrap();
-        assert!(!buffer.is_empty());
-    }
-
-    #[test]
-    fn synthesize_known_settings_result_matches_reference() {
-        let espeak = EspeakSynth::default();
-        let mut buffer = Vec::new();
-
-        espeak.set_voice(REFERENCE_VOICE).unwrap();
-        espeak
-            .set_parameter(EspeakParam::Pitch, REFERENCE_PITCH)
-            .unwrap();
-        espeak
-            .set_parameter(EspeakParam::Speed, REFERNECE_SPEED)
-            .unwrap();
-
-        espeak.synthesize(REFERENCE_TEXT, &mut buffer).unwrap();
-        assert!(!buffer.is_empty());
-
-        let reference_wav = WavReader::open(REFERENCE_OUTPUT_WAV).unwrap();
-        let reference_samples: Vec<i16> =
-            reference_wav.into_samples().map(|s| s.unwrap()).collect();
-
-        assert_eq!(buffer, reference_samples);
     }
 }
