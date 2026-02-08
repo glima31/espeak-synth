@@ -17,3 +17,7 @@ license.workspace = true
 
 [dependencies]
 espeak-sys = { path = "espeak-sys" }
+thiserror = "2.0.18"
+
+[dev-dependencies]
+hound = "3.5.1"
