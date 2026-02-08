@@ -88,6 +88,24 @@ impl EspeakSynth {
         Ok(())
     }
 
+    pub fn voice(&self) -> Result<Option<String>, Error> {
+        let curr_voice_ptr = unsafe { espeak_GetCurrentVoice() };
+        if curr_voice_ptr.is_null() {
+            return Ok(None);
+        }
+
+        let voice = unsafe {
+            let curr_voice = &*curr_voice_ptr;
+            if curr_voice.name.is_null() {
+                return Ok(None);
+            }
+
+            CStr::from_ptr(curr_voice.name).to_str()?.to_owned()
+        };
+
+        Ok(Some(voice))
+    }
+
     pub fn parameter_current(&self, param: EspeakParam) -> u32 {
         unsafe { espeak_GetParameter(param as _, 1) as u32 }
     }
@@ -210,6 +228,22 @@ mod tests {
         assert!(
             matches!(err, Error::InvalidParamValue(p, v) if p == EspeakParam::Amplitude && v == 101)
         );
+    }
+
+    #[test]
+    fn voice_returns_none_if_not_explicitely_set() {
+        let espeak = EspeakSynth::default();
+        let curr = espeak.voice().unwrap();
+        assert!(curr.is_none());
+    }
+
+    #[test]
+    fn voice_returns_new_value_after_set_voice() {
+        let espeak = EspeakSynth::default();
+        espeak.set_voice("German").unwrap();
+
+        let new = espeak.voice().unwrap();
+        assert_eq!(new.unwrap(), "German");
     }
 
     #[test]

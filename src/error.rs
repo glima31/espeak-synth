@@ -17,6 +17,9 @@ pub enum Error {
     #[error("no voices available")]
     NoVoicesAvailable,
 
+    #[error("no voice set")]
+    NoVoice,
+
     #[error("invalid value for '{0:?}': {1}")]
     InvalidParamValue(EspeakParam, u32),
 
