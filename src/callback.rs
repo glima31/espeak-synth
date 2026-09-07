@@ -1,6 +1,9 @@
 use espeak_sys::espeak_EVENT;
 use std::ffi::{c_int, c_short};
 
+/// eSpeak NG synthesis callback.
+///
+/// Appends the delivered samples to the `Vec<i16>` passed through `user_data`.
 pub(crate) unsafe extern "C" fn synth_callback(
     wav: *mut c_short,
     num_samples: c_int,

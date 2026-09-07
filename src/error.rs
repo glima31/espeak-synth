@@ -9,23 +9,30 @@ use espeak_sys::{
 
 use super::EspeakParam;
 
+/// Errors returned by this crate.
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
+    /// An eSpeak NG call returned a non-OK status.
     #[error("espeak operation failed: {}", espeak_error_msg(*.0))]
     Espeak(espeak_ERROR),
 
+    /// The loaded voice data contains no voices.
     #[error("no voices available")]
     NoVoicesAvailable,
 
+    /// No voice is currently set.
     #[error("no voice set")]
     NoVoice,
 
+    /// A value was outside the accepted range for its parameter.
     #[error("invalid value for '{0:?}': {1}")]
     InvalidParamValue(EspeakParam, u32),
 
+    /// A string passed to eSpeak NG contained an interior null byte.
     #[error(transparent)]
     NullPointer(#[from] NulError),
 
+    /// A string returned by eSpeak NG was not valid UTF-8.
     #[error(transparent)]
     InvalidUtf8(#[from] Utf8Error),
 }

@@ -1,17 +1,26 @@
 use super::Error;
 
+/// Maximum value for [`EspeakParam::Amplitude`].
 pub const MAX_AMPLITUDE: u32 = 100;
 
+/// Maximum value for [`EspeakParam::Pitch`].
 pub const MAX_PITCH: u32 = 100;
 
+/// Maximum value for [`EspeakParam::PitchRange`].
 pub const MAX_PITCH_RANGE: u32 = 100;
 
+/// Maximum value for [`EspeakParam::WordGap`].
 pub const MAX_WORD_GAP: u32 = 100;
 
+/// Minimum value for [`EspeakParam::Speed`], in words per minute.
 pub const MIN_SPEED: u32 = 80;
 
+/// Maximum value for [`EspeakParam::Speed`], in words per minute.
 pub const MAX_SPEED: u32 = 450;
 
+/// espeak NG synthesis parameters.
+///
+/// Discriminants match eSpeak NG's parameter identifiers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EspeakParam {
     Amplitude = 2,
@@ -21,6 +30,7 @@ pub enum EspeakParam {
     WordGap = 7,
 }
 
+/// Checks `value` against the accepted range for `param`.
 pub(crate) fn validate_param_value(param: EspeakParam, value: u32) -> Result<(), Error> {
     let (min, max) = match param {
         EspeakParam::Amplitude => (0, MAX_AMPLITUDE),
